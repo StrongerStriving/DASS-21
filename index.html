@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đánh giá DASS-21</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
+        <h1 class="text-3xl font-bold mb-6 text-center">Đánh giá DASS-21</h1>
+        
+        <form id="dass21Form" class="space-y-6">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="name" class="block mb-1">Họ và tên:</label>
+                    <input type="text" id="name" name="name" required class="w-full p-2 border rounded">
+                </div>
+                <div>
+                    <label for="pid" class="block mb-1">PID:</label>
+                    <input type="text" id="pid" name="pid" required class="w-full p-2 border rounded">
+                </div>
+            </div>
+            <div>
+                <label for="testDate" class="block mb-1">Ngày làm test:</label>
+                <input type="date" id="testDate" name="testDate" required class="w-full p-2 border rounded">
+            </div>
+            
+            <div class="space-y-4">
+                <h2 class="text-xl font-semibold">Bảng câu hỏi DASS-21</h2>
+                <p>Vui lòng đọc mỗi câu và khoanh tròn số 0, 1, 2 hoặc 3 phù hợp với bạn trong tuần vừa qua. Không có câu trả lời đúng hay sai. Đừng suy nghĩ quá lâu cho mỗi câu.</p>
+                <p>Thang điểm: 0 = Không đúng với tôi chút nào, 1 = Đúng với tôi phần nào, hoặc một đôi lúc, 2 = Đúng với tôi phần nhiều, hoặc một phần lớn thời gian, 3 = Rất đúng với tôi, hoặc đúng với tôi hầu hết thời gian</p>
+                
+                <div id="questions" class="space-y-4">
+                    <!-- Questions will be dynamically added here -->
+                </div>
+            </div>
+            
+            <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Nộp bài</button>
+        </form>
+        
+        <div id="results" class="mt-8 hidden">
+            <h2 class="text-2xl font-semibold mb-4">Kết quả</h2>
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <h3 class="font-semibold">Trầm cảm</h3>
+                    <p>Điểm: <span id="depressionScore"></span></p>
+                    <p>Mức độ: <span id="depressionLevel"></span></p>
+                </div>
+                <div>
+                    <h3 class="font-semibold">Lo âu</h3>
+                    <p>Điểm: <span id="anxietyScore"></span></p>
+                    <p>Mức độ: <span id="anxietyLevel"></span></p>
+                </div>
+                <div>
+                    <h3 class="font-semibold">Stress</h3>
+                    <p>Điểm: <span id="stressScore"></span></p>
+                    <p>Mức độ: <span id="stressLevel"></span></p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="chartContainer" class="mt-8 hidden">
+            <h2 class="text-2xl font-semibold mb-4">Biểu đồ điểm qua các lần test</h2>
+            <canvas id="scoreChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            "Tôi nhận thấy mình khó có thể nghỉ ngơi thoải mái",
+            "Tôi thấy miệng bị khô",
+            "Tôi không thể có bất kỳ cảm xúc tích cực nào",
+            "Tôi gặp khó khăn trong việc thở (thở nhanh, khó thở dù không làm việc gì nặng)",
+            "Tôi thấy khó khăn để bắt đầu làm thứ gì đó",
+            "Tôi có xu hướng phản ứng thái quá với các tình huống",
+            "Tôi bị run (ví dụ: run tay)",
+            "Tôi cảm thấy mình đang phải sử dụng rất nhiều năng lượng của hệ thần kinh",
+            "Tôi lo lắng về những tình huống trong đó tôi trở nên hoảng loạn và khiến bản thân xấu hổ",
+            "Tôi cảm thấy không có gì để mong đợi cả",
+            "Tôi thấy mình dễ bị kích động",
+            "Tôi thấy khó thư giãn",
+            "Tôi cảm thấy chán nản và buồn rầu",
+            "Tôi không thể chịu đựng nổi nếu có bất cứ điều gì cản trở việc tôi đang làm",
+            "Tôi cảm thấy mình gần với trạng thái hoảng loạn", 
+            "Tôi không thể cảm thấy hứng thú với bất cứ việc gì",
+            "Tôi cảm thấy mình chẳng đáng làm người",
+            "Tôi thấy mình khá dễ xúc động",
+            "Tôi cảm nhận được cách tim mình đập dù không làm việc gì nặng (ví dụ: tim đập nhanh, tim đập hẫng một nhịp)",
+            "Tôi cảm thấy sợ hãi vô cớ",
+            "Tôi cảm thấy cuộc sống vô nghĩa"
+        ];
+
+        const questionsContainer = document.getElementById('questions');
+        questions.forEach((question, index) => {
+            const questionHtml = `
+                <div>
+                    <p class="mb-2">${index + 1}. ${question}</p>
+                    <div class="flex space-x-4">
+                        ${[0, 1, 2, 3].map(value => `
+                            <label class="flex items-center">
+                                <input type="radio" name="q${index + 1}" value="${value}" required class="mr-2">
+                                <span>${value}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            questionsContainer.innerHTML += questionHtml;
+        });
+
+        document.getElementById('dass21Form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const scores = {
+                depression: 0,
+                anxiety: 0,
+                stress: 0
+            };
+
+            for (let [name, value] of formData.entries()) {
+                if (name.startsWith('q')) {
+                    const questionNumber = parseInt(name.slice(1));
+                    if ([3, 5, 10, 13, 16, 17, 21].includes(questionNumber)) {
+                        scores.depression += parseInt(value);
+                    } else if ([2, 4, 7, 9, 15, 19, 20].includes(questionNumber)) {
+                        scores.anxiety += parseInt(value);
+                    } else {
+                        scores.stress += parseInt(value);
+                    }
+                }
+            }
+
+            // Multiply scores by 2 for the DASS-21
+            Object.keys(scores).forEach(key => scores[key] *= 2);
+
+            // Display results
+            document.getElementById('depressionScore').textContent = scores.depression;
+            document.getElementById('anxietyScore').textContent = scores.anxiety;
+            document.getElementById('stressScore').textContent = scores.stress;
+
+            document.getElementById('depressionLevel').textContent = getLevel('depression', scores.depression);
+            document.getElementById('anxietyLevel').textContent = getLevel('anxiety', scores.anxiety);
+            document.getElementById('stressLevel').textContent = getLevel('stress', scores.stress);
+
+            document.getElementById('results').classList.remove('hidden');
+
+            // Update chart
+            updateChart(scores);
+        });
+
+        function getLevel(type, score) {
+            const levels = {
+                depression: [
+                    {max: 9, level: "Bình thường"},
+                    {max: 13, level: "Nhẹ"},
+                    {max: 20, level: "Vừa"},
+                    {max: 27, level: "Nặng"},
+                    {max: Infinity, level: "Rất nặng"}
+                ],
+                anxiety: [
+                    {max: 7, level: "Bình thường"},
+                    {max: 9, level: "Nhẹ"},
+                    {max: 14, level: "Vừa"},
+                    {max: 19, level: "Nặng"},
+                    {max: Infinity, level: "Rất nặng"}
+                ],
+                stress: [
+                    {max: 14, level: "Bình thường"},
+                    {max: 18, level: "Nhẹ"},
+                    {max: 25, level: "Vừa"},
+                    {max: 33, level: "Nặng"},
+                    {max: Infinity, level: "Rất nặng"}
+                ]
+            };
+
+            return levels[type].find(l => score <= l.max).level;
+        }
+
+        let chart;
+        function updateChart(scores) {
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            const testDate = document.getElementById('testDate').value;
+            
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [testDate],
+                    datasets: [{
+                        label: 'Trầm cảm',
+                        data: [scores.depression],
+                        borderColor: 'rgb(255, 99, 132)',
+                        tension: 0.1
+                    }, {
+                        label: 'Lo âu',
+                        data: [scores.anxiety],
+                        borderColor: 'rgb(54, 162, 235)',
+                        tension: 0.1
+                    }, {
+                        label: 'Stress',
+                        data: [scores.stress],
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('chartContainer').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
