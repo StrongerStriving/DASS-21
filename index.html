@@ -12,7 +12,7 @@
         <h1 class="text-3xl font-bold mb-6 text-center">Đánh giá DASS-21</h1>
         
         <form id="dass21Form" class="space-y-6">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label for="name" class="block mb-1">Họ và tên:</label>
                     <input type="text" id="name" name="name" required class="w-full p-2 border rounded">
@@ -29,34 +29,34 @@
             
             <div class="space-y-4">
                 <h2 class="text-xl font-semibold">Bảng câu hỏi DASS-21</h2>
-                <p>Vui lòng đọc mỗi câu và khoanh tròn số 0, 1, 2 hoặc 3 phù hợp với bạn trong tuần vừa qua. Không có câu trả lời đúng hay sai. Đừng suy nghĩ quá lâu cho mỗi câu.</p>
-                <p>Thang điểm: 0 = Không đúng với tôi chút nào, 1 = Đúng với tôi phần nào, hoặc một đôi lúc, 2 = Đúng với tôi phần nhiều, hoặc một phần lớn thời gian, 3 = Rất đúng với tôi, hoặc đúng với tôi hầu hết thời gian</p>
+                <p class="text-sm text-gray-600">Vui lòng đọc mỗi câu và chọn số 0, 1, 2 hoặc 3 phù hợp với bạn trong tuần vừa qua. Không có câu trả lời đúng hay sai. Đừng suy nghĩ quá lâu cho mỗi câu.</p>
+                <p class="text-sm text-gray-600">Thang điểm: 0 = Không đúng với tôi chút nào, 1 = Đúng với tôi phần nào, hoặc một đôi lúc, 2 = Đúng với tôi phần nhiều, hoặc một phần lớn thời gian, 3 = Rất đúng với tôi, hoặc đúng với tôi hầu hết thời gian</p>
                 
                 <div id="questions" class="space-y-4">
                     <!-- Questions will be dynamically added here -->
                 </div>
             </div>
             
-            <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Nộp bài</button>
+            <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-300">Nộp bài</button>
         </form>
         
         <div id="results" class="mt-8 hidden">
             <h2 class="text-2xl font-semibold mb-4">Kết quả</h2>
-            <div class="grid grid-cols-3 gap-4">
-                <div>
-                    <h3 class="font-semibold">Trầm cảm</h3>
-                    <p>Điểm: <span id="depressionScore"></span></p>
-                    <p>Mức độ: <span id="depressionLevel"></span></p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-lg mb-2">Trầm cảm</h3>
+                    <p>Điểm: <span id="depressionScore" class="font-bold"></span></p>
+                    <p>Mức độ: <span id="depressionLevel" class="font-bold"></span></p>
                 </div>
-                <div>
-                    <h3 class="font-semibold">Lo âu</h3>
-                    <p>Điểm: <span id="anxietyScore"></span></p>
-                    <p>Mức độ: <span id="anxietyLevel"></span></p>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-lg mb-2">Lo âu</h3>
+                    <p>Điểm: <span id="anxietyScore" class="font-bold"></span></p>
+                    <p>Mức độ: <span id="anxietyLevel" class="font-bold"></span></p>
                 </div>
-                <div>
-                    <h3 class="font-semibold">Stress</h3>
-                    <p>Điểm: <span id="stressScore"></span></p>
-                    <p>Mức độ: <span id="stressLevel"></span></p>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-lg mb-2">Stress</h3>
+                    <p>Điểm: <span id="stressScore" class="font-bold"></span></p>
+                    <p>Mức độ: <span id="stressLevel" class="font-bold"></span></p>
                 </div>
             </div>
         </div>
@@ -95,12 +95,12 @@
         const questionsContainer = document.getElementById('questions');
         questions.forEach((question, index) => {
             const questionHtml = `
-                <div>
-                    <p class="mb-2">${index + 1}. ${question}</p>
-                    <div class="flex space-x-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="mb-2 font-medium">${index + 1}. ${question}</p>
+                    <div class="flex flex-wrap gap-4">
                         ${[0, 1, 2, 3].map(value => `
-                            <label class="flex items-center">
-                                <input type="radio" name="q${index + 1}" value="${value}" required class="mr-2">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="q${index + 1}" value="${value}" required class="mr-2 cursor-pointer">
                                 <span>${value}</span>
                             </label>
                         `).join('')}
@@ -109,6 +109,9 @@
             `;
             questionsContainer.innerHTML += questionHtml;
         });
+
+        // Simulated database to store test results
+        let testResults = {};
 
         document.getElementById('dass21Form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -146,8 +149,16 @@
 
             document.getElementById('results').classList.remove('hidden');
 
+            // Save test result
+            const pid = formData.get('pid');
+            const testDate = formData.get('testDate');
+            if (!testResults[pid]) {
+                testResults[pid] = [];
+            }
+            testResults[pid].push({date: testDate, scores: scores});
+
             // Update chart
-            updateChart(scores);
+            updateChart(pid);
         });
 
         function getLevel(type, score) {
@@ -179,31 +190,36 @@
         }
 
         let chart;
-        function updateChart(scores) {
+        function updateChart(pid) {
             const ctx = document.getElementById('scoreChart').getContext('2d');
-            const testDate = document.getElementById('testDate').value;
             
             if (chart) {
                 chart.destroy();
             }
 
+            const patientResults = testResults[pid].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const labels = patientResults.map(result => result.date);
+            const depressionData = patientResults.map(result => result.scores.depression);
+            const anxietyData = patientResults.map(result => result.scores.anxiety);
+            const stressData = patientResults.map(result => result.scores.stress);
+
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: [testDate],
+                    labels: labels,
                     datasets: [{
                         label: 'Trầm cảm',
-                        data: [scores.depression],
+                        data: depressionData,
                         borderColor: 'rgb(255, 99, 132)',
                         tension: 0.1
                     }, {
                         label: 'Lo âu',
-                        data: [scores.anxiety],
+                        data: anxietyData,
                         borderColor: 'rgb(54, 162, 235)',
                         tension: 0.1
                     }, {
                         label: 'Stress',
-                        data: [scores.stress],
+                        data: stressData,
                         borderColor: 'rgb(75, 192, 192)',
                         tension: 0.1
                     }]
